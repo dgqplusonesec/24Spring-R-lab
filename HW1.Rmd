@@ -1,0 +1,127 @@
+---
+title: "HW1"
+output: html_document
+date: "2024-03-03"
+author: "窦国泉"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### 问题1
+
+```{r, echo=TRUE, results='hide', message=FALSE, warning=FALSE}
+library(dplyr)
+library(readxl)
+```
+
+首先读取北京二手房房价文件，如下展示前10行
+
+```{r read_data}
+
+data = read_xlsx("./beijing.xlsx") # 导入数据
+head(data, 10) # 展示数据前10行
+```
+
+从左至右，`CATE`代表北京的6个城区；`AREA`代表房屋面积；`subway`代表是否邻近地铁（1为邻近，0为否）；`school`代表是否为学区房（1为，0不为）；`price`代表房价（元/平方米）
+
+<br>
+
+### 问题2
+
+首先，将`school`和`subway`列转换为因子型
+
+```{r}
+data$subway = factor(data$subway, levels = c(0, 1))
+data$school = factor(data$school, levels = c(0, 1))
+head(data)
+```
+
+可以注意到，`subway`和`school`两列的数据类型已从`double`转换成`factor`
+
+<br>
+
+接下来，对数据进行描述性统计。首先关注北京城六区的整体房屋面积与房价，给出二者的五数统计。
+
+```{r}
+summary(data[c(2, 5)])
+```
+
+城六区的二手房房屋面积处于30.06-299之间，均值为91.75，中位数面积为78.83
+
+房价处于18348-149871之间，均价为61152，中位数价格为57473
+
+<br>
+
+再将数据按城区/靠近地铁/靠近学校进行划分并统计房价，关注其中的不同
+
+```{r}
+group_by(data, CATE)%>%
+  summarize(mean_price = mean(price))
+
+group_by(data, subway)%>%
+  summarize(mean_price = mean(price))
+
+group_by(data, school)%>%
+  summarize(mean_price = mean(price))
+```
+
+可见，越靠近市中心房价越贵，其中西城区房价均值最高，石景山最低，邻近地铁/学校的房子房价会更高。这体现了地段、交通、学区三个因素对房子价值的重大影响。
+
+<br>
+
+### 问题3
+
+筛选出`AREA`大于250且`price`大于100000的数据行
+
+```{r}
+filter(data, AREA > 250, price > 100000)
+```
+
+<br>
+
+### 问题4
+
+将数据按照`price`降序排列
+
+```{r}
+arrange(data, desc(price))
+```
+
+<br>
+
+### 问题5
+
+在原数据集上增加一列`totalprice`，用于表示房屋总价
+
+```{r}
+data = mutate(data, totalprice = price * AREA)
+data
+```
+
+<br>
+
+### 问题6
+
+按照`CATE`进行分类，并分别计算`price`的最大值，最小值以及平均值
+
+```{r}
+summarize(group_by(data, CATE), max(price))
+summarize(group_by(data, CATE), min(price))
+summarize(group_by(data, CATE), mean(price))
+```
+
+<br>
+
+### 问题7
+
+计算海淀区、靠近地铁的二手学区房及非学区房的`totalprice`均值
+
+```{r}
+filter(data, CATE == "haidian", subway == 1)%>%
+  group_by(school)%>%
+  summarize(mean_total_price = mean(totalprice))
+```
+
+非学区房的总价均值为5731588，学区房的总价均值为7319466

@@ -1,0 +1,78 @@
+---
+title: "Homework 8"
+output: html_document
+date: "2024-05-13"
+author: "窦国泉202211011001"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 1.读取数据
+
+```{r}
+data = read.csv("E:/R_lab/HW8/data.csv")
+head(data, 5)
+```
+
+## 2.绘制箱线图
+
+
+```{r}
+library(ggplot2)
+ggplot(data, mapping = aes(x = group, y = score, fill = group)) + geom_boxplot()
+```
+
+从箱线图中可以直观感觉到，B、E属于一组，A、C、D属于另一组，这两组的均值有较大差异，但组内的差异可能不大。
+
+## 3.方差分析
+
+（1）正态性检验
+
+```{r}
+shapiro.test(data$score)
+```
+p值大于0.05，认为不能拒绝原假设，即数据具有正态性
+
+（2）方差齐性检验
+
+```{r, warning=FALSE, message=FALSE}
+library(car)
+leveneTest(score ~ factor(group), data)
+```
+```{r}
+bartlett.test(score ~ group, data)
+```
+
+levene test和bartlett test的p值均不显著，说明不能拒绝原假设（各组方差相同），表明可以认为各组之间有着相同的方差，可以进行方差分析。
+
+（3）方差分析
+
+```{r, warning=FALSE}
+library(agricolae)
+result.aov = aov(score ~ group, data)
+summary(result.aov)
+```
+结果显著，说明各组之间均值存在差异。
+
+（4）多重比较
+
+```{r}
+# LSD法
+result.LSD = LSD.test(result.aov, "group", p.adj = "bonferroni")
+print(result.LSD$groups)
+```
+可以发现，除了D和E的均值有着较为显著的差异，被归为了两类，A、B、C所归属的类无法确定。
+
+```{r, warning=FALSE}
+# Tukey法
+library(multcompView)
+result.HSD = TukeyHSD(result.aov)
+result.HSD
+```
+从Tukey的检验结果可以发现，B与D之间，D与E之间的均值有着显著差异，其他组别在给定的5%显著性水平下没有明显差异。
+
+## 4.结论
+
+在对数据验证了正态性和方差齐性的基础上，运用方差分析的方法发现各组的均值之间存在着差异。进而使用多重比较的手段，LSD检验显示除了D和E的均值有着较为显著的差异之外，其他组别均值的差异无法确定；Tukey检验显示，B与D之间，D与E之间的均值有着显著差异，其他组别在给定的5%显著性水平下没有明显差异。

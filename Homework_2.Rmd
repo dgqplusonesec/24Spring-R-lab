@@ -1,0 +1,183 @@
+---
+title: "Homework 2"
+output: html_document
+date: "2024-03-11"
+author: 窦国泉 202211011001
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 字符串
+
+加载 `stringr` 包，导入 `sentences` 数据
+
+```{r, message=FALSE, warning=FALSE}
+library(stringr)
+library(dplyr)
+data("sentences")
+```
+
+<br>
+
+#### 1
+
+取 `sentences` 数据集前10条数据并命名为 `ns` 
+
+```{r}
+ns = sentences[1:10]
+ns
+```
+<br>
+
+#### 2
+
+计算 `ns` 字符串的长度 (分别使用 `length` , `nchar` 以及 `str_length` 函数)，并解释每一个输出的含义
+
+```{r}
+length(ns)
+nchar(ns)
+str_length(ns)
+```
+`length`将向量中每一个字符串看作一个整体，统计字符串的个数；`str_length`和`nchar`返回的是向量中每个字符串中字符的个数，以向量的形式返回出来。
+
+<br>
+
+#### 3
+
+统计 `ns` 中字符串 "in" 出现的次数.
+
+```{r}
+str_count(ns, pattern = "in")
+```
+
+<br>
+
+#### 4
+
+将 `ns` 与字符向量 c(’a’,’b’,’c’,’d’,’e’) 进行拼接，间隔为 + .
+
+```{r}
+paste(ns, c('a', 'b', 'c', 'd', 'e'), sep = "+")
+```
+
+<br>
+
+#### 5
+
+截取 `ns` 前 10 个字符.
+
+```{r}
+substr(ns, 1, 10)
+```
+
+<br>
+
+#### 6
+
+请使用三种方法将 `ns` 的第一个元素进行拆分，拆分成单个字符
+
+```{r}
+strsplit(ns[1], "")
+str_split(ns[1], "")
+sapply(seq_len(nchar(ns[1])), function(i) substr(ns[1], i, i))
+```
+
+<br>
+
+#### 7
+
+请使用两种方法将 `ns` 中的 “in” 修改为 “IN”.
+
+```{r}
+sub(pattern = "in", replacement = "IN", ns)
+str_replace(ns, pattern = "in", replacement = "IN")
+```
+
+<br>
+
+## 正则表达式
+
+#### 1
+
+`^.$` 代表字符串只有一个字符的样式；`(.).\\1.\\1` 代表具有“abaca”样式的字符串
+
+<br>
+
+#### 2
+
+`words` 数据集中包含 980 个单词, 请使用该数据集完成以下操作:
+
+##### a
+
+将 `words` 转换为数据框形式, 并命名为 `df` .
+
+```{r}
+data("words")
+df = data.frame(words)
+head(df, 10)
+```
+
+<br>
+
+##### b
+
+筛选 `df` 中以 "x" 结尾的单词 (使用 `filter` 函数与 `str_detect` 函数).
+
+```{r}
+end_with_x = filter(df, str_detect(df$words, "x$"))
+end_with_x
+```
+
+<br>
+
+##### c
+
+增加一列 `length` , 其值为每个单词的长度.
+
+```{r}
+df = mutate(df, length = nchar(df$words))
+head(df, 10)
+```
+
+<br>
+
+##### d
+
+抓取 b 中得到的 "x" 结尾单词中的 aeiou (使用 `str_extract_all` 函数和正则表达式).
+
+```{r}
+str_extract_all(end_with_x$words, "[aeiou]")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

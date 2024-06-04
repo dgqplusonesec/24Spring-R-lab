@@ -1,0 +1,82 @@
+---
+title: "Homework3"
+output: html_document
+date: "2024-03-18"
+author: 窦国泉
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### 梯度下降算法
+
+
+
+```{r}
+GD = function(alpha, initial_x = 1, tol = 1e-8) {
+  
+  # initial condition
+  x = initial_x
+  path = c(x)
+  dist = 1
+  
+  # gradient descent
+  while (dist > tol) {
+    dist = alpha * (exp(x) - 1/x)
+    x = x - dist
+    path = c(path, x)
+  }
+  
+  # collect result
+  result = list(x = x, value = exp(x) - log(x), path = path, converge = (dist <= tol))
+  return(result)
+}
+
+```
+
+### 梯度下降迭代次数与函数值的折线图
+
+
+
+```{r}
+gd = GD(alpha=0.1)
+plot(1:length(gd$path), exp(gd$path) - log(gd$path), type = 'b', col = 'red', 
+     xlab = "number of iteration", ylab = "value")
+```
+
+### 牛顿-拉弗森算法
+
+```{r}
+newton = function(initial_x = 1, tol = 1e-8) {
+  
+  # initial condition
+  x = initial_x
+  path = c(x)
+  dist = 1
+  
+  # Newton_Raphson algorithm
+  while (dist > tol) {
+    dist = (exp(x) - 1/x) / (exp(x) + 1/x^2)
+    x = x - dist
+    path = c(path, x)
+  }
+  
+  # collect result
+  result = list(x = x, value = exp(x) - log(x), path = path, converge = (dist <= tol))
+  return(result)
+}
+```
+
+### 牛顿-拉弗森算法迭代次数与函数值的折线图
+
+```{r}
+nr = newton()
+plot(1:length(nr$path), exp(nr$path) - log(nr$path), type = "b", col = "red",
+     xlab = "number of iteration", ylab = "value")
+```
+
+<br>
+
+从同一初值出发，牛顿-拉弗森算法迭代次数仅有3次，而梯度下降算法迭代了29次，牛顿-拉弗森算法的迭代速度明显优于梯度下降算法。但由于牛顿-拉弗森算法的计算涉及二阶梯度，计算量较大，在处理形式更复杂和变量数更多的函数时，效果不如梯度下降算法。
+

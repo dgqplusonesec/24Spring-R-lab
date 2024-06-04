@@ -1,0 +1,85 @@
+---
+title: "hw6"
+output: html_document
+date: "2024-04-22"
+author: "窦国泉202211011001"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 1. 
+
+仿照绝对值残差和平方距离，可以类别构造四次方距离
+$$
+d(X_i,Y_i;\beta_0,\beta_1) = (y_i-\beta_0-\beta_1x_i)^{4}
+$$
+
+## 2. 
+
+目标函数可被写为
+
+$$
+L(\beta_0,\beta_1) = \sum_{i=1}^{n}(y_i-\beta_0-\beta_1x_i)^{4}  
+$$
+
+## 3.
+
+定义估计量为自定义目标函数的极小值点，有
+
+$$
+(\hat{\beta_0},\hat{\beta_1})= \underset{\beta_0,\beta_1}{argmin}\sum_{i=1}^{n}(y_i-\beta_0-\beta_1x_i)^{4}  
+$$
+
+生成数据
+
+```{r}
+beta = runif(2)
+n = 1000
+x = rnorm(mean = 5, sd = 2, n)             
+eps = rnorm(mean = 0, sd = 0.8, n)         
+y = rep(1,n)*beta[1] + x*beta[2] + eps     
+```
+
+
+求解数值解
+
+```{r}
+quadratic_loss = function(b) {
+  obj = sum((y - b[1] - b[2]*x) ^ 4) / length(x)
+  return(obj)
+}
+res = optim(c(0,0), quadratic_loss)
+res$par
+```
+
+```{r}
+beta
+```
+
+## 4.
+
+最小二乘估计结果
+
+```{r}
+least_square = function(b) {
+  obj = sum((y - b[1] - b[2]*x)^2)
+  return (obj)
+}
+res_2 = optim(c(0,0), least_square)
+res_2$par
+```
+
+画出图像
+
+```{r}
+plot(x,y)
+abline(coef = res$par, lty = 2, col = 'blue', lwd = 2)
+abline(coef = res_2$par, lty = 2, col = 'green', lwd = 2)
+abline(coef = beta, lty = 1, col = 'red', lwd = 2)
+legend("bottomright", legend = c("自定义", "最小二乘", "真值"), 
+       col = c("blue", "green", "red"), lty = c(1, 1, 1), lwd = c(2, 2, 2))
+```
+
+从数值结果和图像中可以发现，最小二乘相较最小四乘对参数的估计效果更加接近，二者对$\beta_1$的估计相近，而最小二乘法对$\beta_0$的估计更接近真值。

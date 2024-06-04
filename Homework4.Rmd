@@ -1,0 +1,104 @@
+---
+title: "Homework4"
+output: html_document
+date: "2024-03-24"
+author: 窦国泉 202211011001
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+
+```{r cars, message=FALSE, warning=FALSE}
+library(car)
+library(ggplot2)
+```
+<br>
+
+## R自带函数绘图
+
+<br>
+
+#### 1
+```{r}
+plot(Salaries$yrs.since.phd, Salaries$salary, col=c("darkblue"), xlab = "years since phd", 
+     ylab = "salary", main = "yrs.since.phd VS salary")
+```
+
+`salary` 和 `yrs.since.phd` 显示了一定程度的正相关关系，即随着博士毕业年限的增加，薪资也呈现增加的趋势。然而，需要注意的是，数据的波动范围较大。较低的薪资水平在所有自变量水平上都有观察到，这可能反映了一些其他影响因素的存在。相反，较高的薪资水平更多地集中于较长的博士毕业年限中，这表明博士毕业年限可能对薪资水平有更显著的影响。这些发现提示了数据中可能存在的复杂关系，需要进一步深入分析以了解各自变量对薪资水平的实际影响。
+
+<br>
+
+#### 2
+
+```{r}
+hist(Salaries$salary, freq=F, xlab = "salary", ylab = "Frequency divided by class interval",
+     main = "Histogram of salary", density=40, angle=45, col=5)
+```
+
+直方图显示了数据的分布呈现出“中间高、两边低”的形态，这表明数据在某种程度上具有对称性。特别是，更多的数据点集中在 100000 到 150000的中心区间上，体现了数据的主要集中趋势。然而，需要注意的是，直方图的右侧尾部较长，这表明数据呈现出右偏态分布。右偏态分布暗示着在数据集中存在一些较大的值，导致了整体数据分布的右偏。
+
+<br>
+
+#### 3
+```{r}
+boxplot(Salaries$salary ~ Salaries$rank, col = c("indianred2", "lightblue", "lightgreen"),
+        xlab = "rank", ylab = "salary",main = "Boxplots of salary wrt rank")
+```
+
+从助理教授到副教授再到教授，工资水平逐渐上升，且对于教授群体来说，存在个别高薪的离群值。
+
+## ggplot2绘图
+
+<br>
+
+#### 1
+
+```{r}
+ggplot(data = Salaries) +
+  geom_point(mapping = aes(x = yrs.since.phd, y = salary, col = rank))
+```
+
+薪资与博士毕业年限正相关，博士毕业年限越久，薪资越高。同时，级别等级也与博士毕业年限高度相关，毕业年限久的多为教授，较短的多为助理教授。
+
+<br>
+
+#### 2
+
+```{r}
+ggplot(data = Salaries, mapping = aes(x = salary, y = ..density.., col = sex)) +
+  geom_histogram(fill = "white")
+  
+```
+
+男女在薪资分布上存在差异，较低收入中女性占比高于男性，较高收入中男性占比高于女性。
+
+<br>
+
+#### 3
+
+```{r}
+ggplot(data = Salaries) +
+  geom_point(mapping = aes(x = yrs.service, y = salary, col = rank)) +
+  geom_smooth(mapping = aes(x = yrs.service, y = salary)) +
+  facet_wrap(.~ sex)
+  
+```
+
+对于男性和女性，级别均与入职年限正相关。入职年限越长，级别越高。但薪资却随入职年限展现出了先增加后降低的趋势，对于男性和女性，薪资都在大约20年的工作年限下达到最高，后有下降趋势。
+
+<br>
+
+#### 4
+
+```{r}
+ggplot(data = Salaries, mapping = aes(x = rank, y = salary)) +
+  geom_boxplot(mapping = aes(fill = sex)) +
+  scale_x_discrete(labels = c("Assistant", "Associate", "Full")) +
+  scale_y_continuous(breaks = c(50000, 100000, 150000, 200000))
+```
+
+薪资普遍随级别上升而升高，每级别内部男性平均薪资高于女性。

@@ -1,0 +1,152 @@
+---
+title: "hw10"
+output: html_document
+date: "2024-06-02"
+author: "窦国泉 202211011001"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 1.读取数据
+
+```{r}
+film_data = read.csv("E:/R_lab/HW10/film.csv", stringsAsFactors = FALSE)
+any(is.na(film_data)) # 检验有无NA数据
+```
+## 2.
+
+去除有NA的行
+
+```{r}
+film_data = na.omit(film_data)
+any(is.na(film_data))
+```
+提取票房最高和最低的行的数据
+
+```{r}
+max_box_index = which.max(film_data$boxoffice)
+film_data[max_box_index, ]
+```
+
+```{r}
+min_box_index = which.min(film_data$boxoffice)
+film_data[min_box_index, ]
+```
+
+## 3.
+
+```{r}
+par(mfrow = c(1, 2))
+hist(film_data$boxoffice, main = "票房直方图", xlab = "票房", ylab = "频数")
+hist(log(film_data$boxoffice), main = "对数票房直方图", xlab = "对数票房", ylab = "频数")
+```
+
+对于未做对数处理的票房直方图来说，票房数据值很大，数据范围很广，主要集中在0-40000之间，此范围之外的数据很少，是一个高度右偏的分布，方差很大。对于做了对数处理后的数据，范围缩小了，主要集中在7-10之间，减少了数据的偏态，降低了整个数据的方差，且使极端值得到了很好的处理
+
+## 4.
+
+```{r}
+# 分成50年代(含)之前，60年代，70年代，80年代
+film_data$year_group = ifelse(film_data$导演年代 <= 50, "50之前",
+                              ifelse(film_data$导演年代 == 60, "60",
+                                     ifelse(film_data$导演年代 == 70, "70",
+                                            ifelse(film_data$导演年代 == 80, "80", 0))))
+
+
+par(mfrow = c(1, 2))
+boxplot(film_data$boxoffice~film_data$year_group, xlab = "导演年代", ylab = "票房")
+boxplot(log(film_data$boxoffice)~film_data$year_group, xlab = "导演年代", ylab = "对数票房")
+```
+
+两张图都反映出票房均值随导演年代的大小顺序为：50年代之前>60年代>80年代>70年代，用对数处理过的票房数据方差更小，且无离群数据，更加稳定。
+
+## 5.
+
+```{r}
+film_data$genre = as.factor(film_data$genre)
+film_data$genre = relevel(film_data$genre, ref = "喜剧")
+
+film_data$year = as.factor(film_data$year)
+film_data$year = relevel(film_data$year, ref = '2010')
+
+film_data$distribute = as.factor(film_data$distribute)
+film_data$distribute = relevel(film_data$distribute, ref = "C")
+
+film_data$story = as.factor(film_data$story)
+film_data$story = relevel(film_data$story, ref = "N")
+
+film_data$sequel = as.factor(film_data$sequel)
+film_data$sequel = relevel(film_data$sequel, ref = '0')
+
+film_data$reality = as.factor(film_data$reality)
+film_data$reality = relevel(film_data$reality, ref = '0')
+```
+
+
+```{r}
+model <- lm(boxoffice~genre + year + distribute + story + sequel + reality, data = film_data)
+summary(model)
+```
+
+## 6. 残差诊断
+
+```{r}
+plot(model$residuals)
+```
+
+从图中可以看出，残差大概呈现出同方差、零均值的分布，满足残差的假设条件。
+
+```{r}
+shapiro_result = shapiro.test(model$residuals)
+shapiro_result
+```
+
+p值小于0.05，说明残差符合正态性假设
+
+## 7.
+
+```{r}
+film_data$log_box = log(film_data$boxoffice)
+model1 = lm(log_box~genre + year + distribute + story + sequel + reality, data = film_data)
+summary(model1)
+```
+
+```{r}
+plot(model1$residuals)
+```
+
+观察图可以发现，对数票房建模下的残差同样大致有同方差、零均值的分布
+
+```{r}
+shapiro_result1 = shapiro.test(model1$residuals)
+shapiro_result1
+```
+p = 0.2 > 0.05，不能拒绝原假设，无法认为残差有正态性
+
+## 8.
+
+无对数处理的票房回归的共线性检验
+
+```{r, warning=FALSE}
+library(car)
+vif(model)
+```
+对数处理的票房回归的共线性检验
+
+```{r}
+vif(model1)
+```
+
+二者是一样的，那么对无对数处理的票房回归模型做逐步回归
+
+```{r}
+step.res = step(model, direction = 'backward')
+```
+
+```{r}
+summary(step.res)
+```
+
+剔除掉了reality变量

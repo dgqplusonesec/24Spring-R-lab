@@ -1,0 +1,98 @@
+---
+title: "hw7"
+output: html_document
+date: "2024-04-27"
+author: "窦国泉202211011001"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 1.
+
+#### (1) 求解泊松分布$\lambda$的置信区间
+
+$$
+X_1,...,X_n \overset{i.i.d}{\sim} P(\lambda) \\
+\hat{\lambda}_{MLE} = \bar{X} \\
+\frac{\sqrt{n}(\bar{X}-\lambda)}{\sqrt{\lambda}} \overset{d}{\sim} N(0,1) \\
+P(\left | \frac{\sqrt{n}(\bar{X}-\lambda)}{\sqrt{\lambda}} \right | 
+\le z_{\frac{\alpha}{2}}) = 1-\alpha, 其中z_{\frac{\alpha}{2}}为标准正态分布上\frac{\alpha}{2}分位数
+\\
+根据上式，可解出关于\lambda的P(L(X) \le \lambda \le U(X)) = 1-\alpha的置信区间\\
+L(X),U(X) = \\
+\bar{X}+\frac{1}{2n}z^{2}_{\frac{\alpha}{2}} \pm \sqrt{\frac{1}{n}\bar{X}z^{2}_{\frac{\alpha}{2}} + 
+\frac{1}{4n^{2}}z^{4}_{\frac{\alpha}{2}}}
+$$
+
+#### (2) 模拟计算置信区间
+
+```{r, warning = FALSE, message=FALSE}
+library(dplyr)
+```
+
+
+```{r}
+n = 10000
+lambda = 5
+count = 0
+rept = 1000
+z = qnorm(0.975, 0, 1)
+for (i in 1:rept) {
+  set.seed(i)
+  x = rpois(n, lambda)
+  x_bar = mean(x)
+  L = x_bar + 1/(2*n) * z^2 - (1/n * x_bar * z^2 + 1/(4*n^2) * z^4)^(1/2)
+  U = x_bar + 1/(2*n) * z^2 + (1/n * x_bar * z^2 + 1/(4*n^2) * z^4)^(1/2)
+  count = count + as.numeric(between(lambda, L, U))
+}
+count / rept
+```
+## 2.
+
+```{r}
+n = 1000
+rept = 100
+t = qt(0.975, n-1)
+eps = 1 / sqrt(n*0.05)
+length1 = rep(0, rept)
+length2 = rep(0, rept)
+length3 = rep(0, rept)
+length4 = rep(0, rept)
+boots = rep(0, 1000)
+for (i in 1:rept) {
+  set.seed(1000+i)
+  x = rnorm(n, 1, 1)
+  x_bar = mean(x)
+  s = var(x)^(1/2)
+  # 枢轴量法
+  L1 = x_bar - s/(n^(1/2)) * t
+  U1 = x_bar + s/(n^(1/2)) * t
+  # 大样本法
+  L2 = x_bar - 1/(n^(1/2)) * z
+  U2 = x_bar + 1/(n^(1/2)) * z
+  # 概率不等式法
+  L3 = x_bar - eps
+  U3 = x_bar + eps
+  # 自助法
+  for (j in 1:1000){
+    set.seed(2000+j)
+    y = sample(x, n, replace = TRUE)
+    boots[j] = mean(y)
+  }
+  boots = sort(boots, decreasing = F)
+  L4 = boots[25]
+  U4 = boots[975]
+  length1[i] = U1-L1
+  length2[i] = U2-L2
+  length3[i] = U3-L3
+  length4[i] = U4-L4
+}
+```
+
+```{r}
+result = data.frame(CI1 = length1, CI2 = length2, CI3 = length3, CI4 = length4)
+boxplot(result)
+```
+

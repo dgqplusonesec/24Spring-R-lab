@@ -1,0 +1,92 @@
+---
+title: "Homework 9"
+output: html_document
+date: "2024-05-24"
+author: "窦国泉202211011001"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 1.读取数据
+
+
+
+```{r}
+data = read.csv("E:/R_lab/HW9/data (1).csv")
+head(data, 5)
+```
+
+## 2.
+
+
+```{r}
+hist(data$rent, main = "月租金直方图", xlab = "月租金", ylab = "频数")
+```
+
+从图中可知，房屋的月租金大概分布在1000-6000之间，集中分布在2000-4000之间
+
+## 3.
+
+```{r}
+library(ggplot2)
+```
+
+```{r}
+box1 = ggplot(data, mapping = aes(room, rent)) + 
+  geom_boxplot(mapping = aes(fill = room)) +
+  xlab("租凭房间") + ylab("月租金") +
+  labs(fill = "租凭房间")
+box1
+```
+
+主卧的房租平均高于次卧房租，主卧房租的方差更大，次卧房租的离群值更多，离群程度更大
+
+## 4.
+
+```{r}
+box2 = ggplot(data, mapping = aes(region, rent)) + 
+  geom_boxplot(mapping = aes(fill = region)) +
+  xlab("城区") + ylab("月租金") +
+  labs(fill = "城区")
+box2
+```
+
+大致来看，发达城区、如东西海朝的房租均值会高于其他城区。其中西城的房租均值最高，房山的房租均值最低。同时，发达城区的房租方差较大。而房租离群的现象与发达程度不太相关，昌平、朝阳、大兴、丰台、顺义、通州均有较明显的数据离群现象，而其他城区的数据离群现象不明显。
+
+## 5.
+
+按自定义分类标准设置类别变量，哑变量
+
+```{r}
+data$room_cls = ifelse(data$room == "主卧", 1, 0)
+data$floor_grp_cls = ifelse(data$floor_grp == "高楼层", 2, ifelse(data$floor_grp == "中楼层", 1, 0))
+data$subway_cls = ifelse(data$subway == "是", 1, 0)
+data$region_cls = ifelse(data$region == "海淀", 1, 0)
+data$heating_cls = ifelse(data$heating == "集中供暖", 1, 0)
+```
+
+
+```{r}
+for (i in 11:ncol(data)) {
+  data[, i] = as.factor(data[, i])
+  data[, i] = relevel(data[, i], ref = "0")
+}
+```
+
+```{r}
+lm.res = lm(rent~bedroom+livingroom+bathroom+area+room_cls+floor_grp_cls+subway_cls+region_cls+heating_cls, data)
+summary(lm.res)
+```
+
+## 6.
+
+```{r}
+new_data = data.frame(bedroom = 3, livingroom = 1, bathroom = 1,
+                      area = 20, room_cls = as.factor(1), floor_grp_cls = as.factor(1),
+                      subway_cls = as.factor(1), region_cls = as.factor(1), heating_cls = as.factor(1))
+predict(lm.res, new_data, interval = "prediction")
+```
+
+预测值：4150.119元

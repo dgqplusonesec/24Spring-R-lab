@@ -1,0 +1,227 @@
+---
+title: "Homework5"
+output: html_document
+date: "2024-03-31"
+author: "窦国泉202211011001"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+## 1.1
+
+方法一：将n重伯努利随机变量视为n个两点分布随机变量的和，故只需生成n个两点分布随机数，然后对其求和即可。在此例中，生成了n个均匀分布随机数，对每个均匀分布随机数，实施两点分布的逆变换得到两点分布随机数，之后对整个向量求和便得二项分布随机数
+
+```{r}
+size = c(10, 50, 100, 500, 1000)
+time1 = c()
+rand_num1 = c()
+for (n in size) {
+  start = Sys.time()
+    u = runif(n)
+    u = ifelse(u > 0.7, 1, 0)
+    rand = sum(u)
+    rand_num1 = c(rand_num1, rand)
+  end = Sys.time()
+  time_used = end - start
+  time1 = c(time1, time_used)
+}
+```
+
+方法二：通过二项分布逆变换来得到随机数。
+
+```{r}
+time2 = c()
+rand_num2 = c()
+for (n in size) {
+  start = Sys.time()
+  u = runif(1)
+  k = 0
+  p = (0.7) ** n
+  cum_prob = p
+  while (u > cum_prob) {
+    p = ((n-k)*3) / (7*(k+1)) * p
+    cum_prob = cum_prob + p
+    k = k + 1
+  }
+  rand_num2 = c(rand_num2, k)
+  end = Sys.time()
+  time_used = end - start
+  time2 = c(time2, time_used)
+}
+
+
+```
+
+
+```{r}
+plot(size, time1, type = "b", col = "lightblue", lwd = 3,xlab = "n", ylab = "time", ylim = c(0, max(time1, time2)), xaxt = "n")
+lines(size, time2, type = "b", col = "indianred2", lwd = 3)
+axis(1, at = size, labels = size)
+legend("topleft", legend = c("方法一", "方法二"), col = c("lightblue", "indianred2"), lty = 1)
+```
+
+两种方法的运行时间均展现出了先递减后递增的趋势
+
+## 1.2
+
+
+```{r}
+# 方法三
+all_prob = c(0.05, 0.25, 0.5, 0.75, 0.95)
+n = 100
+time3 = c()
+rand_num3 = c()
+for (prob in all_prob) {
+  start = Sys.time()
+  u = runif(1)
+  k = 0
+  p = (prob) ** n
+  cum_prob = p
+  while (u > cum_prob) {
+    p = ((n-k)*(1-prob)) / (prob * (k+1)) * p
+    cum_prob = cum_prob + p
+    k = k + 1
+  }
+  rand_num3 = c(rand_num3, n - k)
+  end = Sys.time()
+  time_used = end - start
+  time3 = c(time3, time_used)
+}
+```
+
+```{r}
+# 方法二
+time4 = c()
+rand_num4 = c()
+for (prob in all_prob) {
+  start = Sys.time()
+  u = runif(1)
+  k = 0
+  p = (1 - prob) ** n
+  cum_prob = p
+  while (u > cum_prob) {
+    p = ((n-k)*(prob)) / ((1-prob) * (k+1)) * p
+    cum_prob = cum_prob + p
+    k = k + 1
+  }
+  rand_num4 = c(rand_num4, k)
+  end = Sys.time()
+  time_used = end - start
+  time4 = c(time4, time_used)
+}
+```
+
+```{r}
+plot(all_prob, time3, type = "b", col = "lightblue", lwd = 3, xlab = "probability", ylab = "time", xaxt = "n", ylim = c(0, max(time3, time4)))
+lines(all_prob, time4, type = "b", col = "indianred2", lwd = 3)
+axis(1, at = all_prob, labels = all_prob)
+legend("topright", legend = c("方法二", "方法三"), col = c("indianred2", "lightblue"), lty = 1)
+```
+
+可见，随着成功概率的上升，方法三的运行时间逐渐降低，方法二的运行时间先降低后增加。
+
+## 2.1
+
+极大似然估计
+$$
+X \sim U(0, \theta ) \\
+f(x;\theta) = \frac{1}{\theta} I_{(0,\theta)} (x)\\
+L(\theta; x_1,...,x_n) = \prod_{i=1}^{n}f(x_i;\theta) = \frac{1}{\theta^{n}}I_{(0,\theta)}(x_{(n)})\\
+\hat{\theta}_{MLE} = X_{(n)}   
+$$
+
+矩估计
+$$
+X \sim U(0, \theta ) \\
+E(X) = \frac{\theta}{2}\\
+Var(X) = E(X^{2}) - E(X)^{2}=\frac{\theta ^{2}}{12}\\
+\hat{\theta}_{1} = 2\bar{X}\\
+\hat{\theta}_{2} = 2\sqrt{3}\sqrt{\bar{X^{2}} - \bar{X}^{2}}
+$$
+
+## 2.2
+
+```{r}
+mle = function(samp) {
+  return(max(samp))
+}
+
+point_est1 = function(samp) {
+  return(2 * mean(samp))
+}
+
+point_est2 = function(samp) {
+  square_samp = samp**2
+  part = mean(square_samp) - mean(samp)**2
+  return(2*sqrt(3)*sqrt(part))
+}
+
+rmse = function(stat, param) {
+  return(sqrt(mean((stat - param)**2)))
+}
+```
+
+```{r}
+N = 1000
+T = 50
+param = 1
+mle_stats = c()
+est1_stats = c()
+est2_stats = c()
+for(i in 1:T) {
+  obs = runif(N)
+  mle_stat = mle(obs)
+  est1_stat = point_est1(obs)
+  est2_stat = point_est2(obs)
+  mle_stats = c(mle_stats, mle_stat)
+  est1_stats = c(est1_stats, est1_stat)
+  est2_stats = c(est2_stats, est2_stat)
+}
+rmse1 = rmse(mle_stats, param)
+rmse2 = rmse(est1_stats, param)
+rmse3 = rmse(est2_stats, param)
+```
+
+```{r}
+boxplot(mle_stats, est1_stats, est2_stats, col = c("lightblue", "indianred2", "lightgreen"),
+        names = c("MLE", "矩估计1", "矩估计2"), xlab = "估计量", ylab = "RMSE")
+
+```
+
+由图可知，三种估计量中极大似然估计量方差最小，代表最有效。同时，根据RMSE数据，极大似然估计量同样为估计精度最高的估计量，次之是第二种矩估计，最差的为第一种矩估计。
+
+## 2.3
+
+```{r}
+mae = function(samp, param) {
+  return(mean(abs(samp - param)))
+}
+```
+
+```{r}
+observation = runif(N)
+repetition = 1000
+mle_stats = c()
+est1_stats = c()
+est2_stats = c()
+for(i in 1:repetition) {
+  obs = sample(observation, size = N, replace = TRUE)
+  mle_stat = mle(obs)
+  est1_stat = point_est1(obs)
+  est2_stat = point_est2(obs)
+  mle_stats = c(mle_stats, mle_stat)
+  est1_stats = c(est1_stats, est1_stat)
+  est2_stats = c(est2_stats, est2_stat)
+}
+mae1 = mae(mle_stats, param)
+mae2 = mae(est1_stats, param)
+mae3 = mae(est2_stats, param)
+mae1 # 极大似然估计
+mae2 # 第一种矩估计
+mae3 # 第二种矩估计
+```
+
